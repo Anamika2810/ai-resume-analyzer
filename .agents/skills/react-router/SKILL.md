@@ -18,7 +18,7 @@ Use Framework Mode guidance when you see:
 
 - `@react-router/dev` in dependencies
 - `react-router.config.ts`
-- `app/routes.ts`
+- `../../../app/routes.ts`
 - `app/entry.server.tsx` and/or `app/entry.client.tsx` files
 - route modules under `app/routes/`
 - route exports like `loader`, `action`, `clientLoader`, `clientAction`, `ErrorBoundary`, `meta`, `links`, or `headers`

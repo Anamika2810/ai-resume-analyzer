@@ -1,6 +1,6 @@
 # Framework Mode
 
-Framework Mode is React Router's full-stack mode. It uses the React Router Vite plugin, route config in `app/routes.ts`, route modules, generated route types, and rendering strategies such as SSR, SPA mode, and pre-rendering.
+Framework Mode is React Router's full-stack mode. It uses the React Router Vite plugin, route config in `../../../../app/routes.ts`, route modules, generated route types, and rendering strategies such as SSR, SPA mode, and pre-rendering.
 
 Use this reference after the main skill identifies a Framework Mode app.
 
@@ -58,7 +58,7 @@ export default function Product({ loaderData }: Route.ComponentProps) {
 
 ## Route Configuration
 
-Framework apps use `app/routes.ts`. Many apps use file-system routing via `flatRoutes()`, but manual route config is also supported.
+Framework apps use `../../../../app/routes.ts`. Many apps use file-system routing via `flatRoutes()`, but manual route config is also supported.
 
 Before editing routes, read:
 
