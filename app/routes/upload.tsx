@@ -16,6 +16,7 @@ const Upload = () => {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusText, setStatusText] = useState('');
+    const [errorText, setErrorText] = useState('');
     const [file, setFile] = useState<File | null>(null);
 
     const handleFileSelect = (file: File | null) => {
@@ -34,6 +35,7 @@ const Upload = () => {
         file: File;
     }) => {
         try {
+            setErrorText('');
             setIsProcessing(true);
 
             // 1. Upload resume
@@ -42,7 +44,7 @@ const Upload = () => {
             const uploadFile = await fs.upload([file]);
 
             if (!uploadFile) {
-                setStatusText('Error: No file uploaded.');
+                setErrorText('Error: No file uploaded.');
                 return;
             }
 
@@ -52,12 +54,12 @@ const Upload = () => {
             const imageFile = await convertPdfToImage(file);
 
             if (!imageFile) {
-                setStatusText('Error: Failed to convert PDF to image.');
+                setErrorText('Error: Failed to convert PDF to image.');
                 return;
             }
 
             if (!imageFile.file) {
-                setStatusText(
+                setErrorText(
                     imageFile.error
                         ? `Error: ${imageFile.error}`
                         : 'Error: Failed to generate image file.'
@@ -71,7 +73,7 @@ const Upload = () => {
             const uploadImage = await fs.upload([imageFile.file]);
 
             if (!uploadImage) {
-                setStatusText('Error: No image uploaded.');
+                setErrorText('Error: No image uploaded.');
                 return;
             }
 
@@ -107,7 +109,7 @@ const Upload = () => {
             );
 
             if (!feedback) {
-                setStatusText('Error: Failed to analyze resume.');
+                setErrorText('Error: Failed to analyze resume.');
                 return;
             }
 
@@ -117,7 +119,7 @@ const Upload = () => {
                     : feedback.message.content[0]?.text ?? '';
 
             if (!feedbackText) {
-                setStatusText('Error: No feedback received from AI.');
+                setErrorText('Error: No feedback received from AI.');
                 return;
             }
 
@@ -140,7 +142,7 @@ const Upload = () => {
                     parseErr,
                     cleanedFeedbackText
                 );
-                setStatusText(
+                setErrorText(
                     'Error: AI returned an unexpected format. Please try again.'
                 );
                 return;
@@ -156,8 +158,10 @@ const Upload = () => {
         } catch (error) {
             console.error('Resume analysis error:', error);
 
-            setStatusText(
-                'Something went wrong while analyzing your resume.'
+            setErrorText(
+                error instanceof Error
+                    ? `Error: ${error.message}`
+                    : 'Something went wrong while analyzing your resume.'
             );
         } finally {
             setIsProcessing(false);
@@ -210,6 +214,8 @@ const Upload = () => {
                                 alt="Scanning resume"
                             />
                         </>
+                    ) : errorText ? (
+                        <h2 className="text-red-600">{errorText}</h2>
                     ) : (
                         <h2>
                             Drop your resume for an ATS score and
