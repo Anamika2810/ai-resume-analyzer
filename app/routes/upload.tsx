@@ -99,8 +99,12 @@ const Upload = () => {
             // 6. Analyze resume using AI
             setStatusText('Analyzing...');
 
+            // NOTE: temporarily sending the converted image instead of the
+            // raw PDF here, because the fallback model (google/gemma-4-31b-it)
+            // supports image input but not native PDF parsing the way Claude
+            // did. Revert to `uploadFile.path` once Claude access is restored.
             const feedback = await ai.feedback(
-                uploadFile.path,
+                uploadImage.path,
                 prepareInstructions({
                     jobTitle,
                     jobDescription,
