@@ -4,7 +4,7 @@ import FileUploader from '../components/FileUploader';
 import { usePuterStore } from '~/lib/puter';
 import { useNavigate } from 'react-router';
 import { convertPdfToImage } from '~/lib/pdf2image';
-import { generateUUID } from '~/utils';
+import { extractValidJsonObject, generateUUID } from '~/utils';
 import {
     AIResponseFormat,
     prepareInstructions,
@@ -129,16 +129,17 @@ const Upload = () => {
 
             // The model is instructed to return raw JSON, but different
             // models wrap it differently — markdown ```json fences,
-            // <thought>...</thought> reasoning blocks, stray whitespace,
-            // etc. Rather than special-casing every wrapper format, pull
-            // out just the substring from the first "{" to the last "}".
-            const firstBrace = feedbackText.indexOf('{');
-            const lastBrace = feedbackText.lastIndexOf('}');
-
-            const cleanedFeedbackText =
-                firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
-                    ? feedbackText.slice(firstBrace, lastBrace + 1).trim()
-                    : feedbackText.trim();
+            // <thought>...</thought> reasoning blocks that can themselves
+            // contain informal, invalid JSON-like snippets, stray
+            // whitespace, etc. Rather than special-casing every wrapper
+            // format (or naively slicing from the first "{" to the last
+            // "}", which breaks if the wrapper text itself contains
+            // brace-delimited fragments), scan for every "{" and try to
+            // parse the balanced (matching-brace) substring starting
+            // there — skipping any that fail to parse — until one
+            // succeeds. That's guaranteed to land on the real JSON object
+            // regardless of what surrounds it.
+            const cleanedFeedbackText = extractValidJsonObject(feedbackText);
 
             let parsedFeedback;
             try {

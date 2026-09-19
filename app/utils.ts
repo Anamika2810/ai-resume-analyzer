@@ -27,3 +27,62 @@ export function formatSize(bytes: number): string {
 }
 
 export const generateUUID = () => crypto.randomUUID();
+
+/**
+ * Scans text for every "{" and tries to parse the balanced
+ * (matching-brace, string-aware) substring starting there, returning the
+ * first one that parses as valid JSON. This survives arbitrary wrapper
+ * text around the real JSON object — markdown fences, chain-of-thought
+ * reasoning blocks, etc. — even when that wrapper text itself contains
+ * brace-delimited but invalid JSON-like fragments (e.g. an LLM's
+ * "thinking out loud" pseudo-code). Falls back to the raw trimmed text
+ * if nothing balanced parses.
+ */
+export function extractValidJsonObject(text: string): string {
+    for (
+        let start = text.indexOf('{');
+        start !== -1;
+        start = text.indexOf('{', start + 1)
+    ) {
+        let depth = 0;
+        let inString = false;
+        let escaped = false;
+
+        for (let i = start; i < text.length; i++) {
+            const char = text[i];
+
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (char === '"') {
+                inString = true;
+            } else if (char === '{') {
+                depth++;
+            } else if (char === '}') {
+                depth--;
+                if (depth === 0) {
+                    const candidate = text.slice(start, i + 1);
+                    try {
+                        JSON.parse(candidate);
+                        return candidate;
+                    } catch {
+                        // Not valid JSON starting here (e.g. a pseudo-code
+                        // fragment inside a reasoning block) — stop
+                        // walking this candidate and try the next "{".
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return text.trim();
+}
