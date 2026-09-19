@@ -127,15 +127,18 @@ const Upload = () => {
                 return;
             }
 
-            // The model is instructed to return raw JSON, but sometimes
-            // wraps it in ```json fences or adds stray whitespace/text.
-            // Strip that before parsing so we don't silently fail here.
-            const cleanedFeedbackText = feedbackText
-                .trim()
-                .replace(/^```json\s*/i, '')
-                .replace(/^```\s*/i, '')
-                .replace(/```$/i, '')
-                .trim();
+            // The model is instructed to return raw JSON, but different
+            // models wrap it differently — markdown ```json fences,
+            // <thought>...</thought> reasoning blocks, stray whitespace,
+            // etc. Rather than special-casing every wrapper format, pull
+            // out just the substring from the first "{" to the last "}".
+            const firstBrace = feedbackText.indexOf('{');
+            const lastBrace = feedbackText.lastIndexOf('}');
+
+            const cleanedFeedbackText =
+                firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
+                    ? feedbackText.slice(firstBrace, lastBrace + 1).trim()
+                    : feedbackText.trim();
 
             let parsedFeedback;
             try {
