@@ -4,6 +4,7 @@ import { usePuterStore } from "~/lib/puter";
 import Summary from "~/components/Summary";
 import ATS from "~/components/ATS";
 import Details from "~/components/Details";
+import { readFileWithRetry } from "~/utils";
 
 export const meta = () => [
     { title: "Resumer | Review" },
@@ -45,9 +46,11 @@ const Resume = () => {
                 // The saved record only holds Puter filesystem paths, not
                 // browser-loadable URLs — fetch the actual blobs and turn
                 // them into object URLs the <img>/<a> tags can use.
+                // Retries on Puter's 429 rate-limit rather than failing
+                // the whole page load over a transient throttle.
                 const [resumeBlob, imageBlob] = await Promise.all([
-                    fs.read(parsedResume.resumePath),
-                    fs.read(parsedResume.imagePath),
+                    readFileWithRetry(fs, parsedResume.resumePath),
+                    readFileWithRetry(fs, parsedResume.imagePath),
                 ]);
 
                 if (resumeBlob) {

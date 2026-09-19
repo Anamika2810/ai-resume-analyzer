@@ -29,6 +29,39 @@ export function formatSize(bytes: number): string {
 export const generateUUID = () => crypto.randomUUID();
 
 /**
+ * Puter's API rate-limits concurrent requests (429 "too_many_requests"),
+ * which happens easily when a page fires off several fs.read() calls at
+ * once. Retries with backoff before giving up, so a transient rate limit
+ * doesn't get treated as a real failure.
+ */
+export async function readFileWithRetry(
+    fs: { read: (path: string) => Promise<Blob | undefined> },
+    path: string,
+    maxAttempts = 3
+): Promise<Blob | undefined> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await fs.read(path);
+        } catch (err) {
+            const isRateLimited =
+                err &&
+                typeof err === 'object' &&
+                'code' in err &&
+                (err as { code?: string }).code === 'too_many_requests';
+
+            if (isRateLimited && attempt < maxAttempts) {
+                await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+                continue;
+            }
+
+            throw err;
+        }
+    }
+
+    return undefined;
+}
+
+/**
  * Scans text for every "{" and tries to parse the balanced
  * (matching-brace, string-aware) substring starting there, returning the
  * first one that parses as valid JSON. This survives arbitrary wrapper
